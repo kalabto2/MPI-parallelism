@@ -1,0 +1,11 @@
+# ninja log v5
+1	1060	1646167444831761876	CMakeFiles/sequential.dir/src/Graph.cpp.o	c12ad412e388aea4
+1060	1162	1646167444935769000	sequential	a7df582706cb9b91
+1	991	1646164015876418333	CMakeFiles/sequential.dir/src/Instance_handler.cpp.o	31f70485ca23f085
+1	527	1646164015412426326	CMakeFiles/sequential.dir/src/main.cpp.o	de8a2b8492c2b7fe
+1	782	1646173744462535249	CMakeFiles/sequential.dir/src/main.cpp.o	a0782b9776c0ce72
+1	806	1646173744486535541	CMakeFiles/sequential.dir/src/Instance_handler.cpp.o	fd74ffb9bae16c8e
+2	897	1646173825479573260	CMakeFiles/sequential.dir/src/main.cpp.o	a0782b9776c0ce72
+1	816	1646173921260919433	CMakeFiles/sequential.dir/src/main.cpp.o	a0782b9776c0ce72
+1	1169	1646173921612924591	CMakeFiles/sequential.dir/src/Graph.cpp.o	8f3a9b1af479b966
+1169	1269	1646173921712926057	sequential	a7df582706cb9b91
