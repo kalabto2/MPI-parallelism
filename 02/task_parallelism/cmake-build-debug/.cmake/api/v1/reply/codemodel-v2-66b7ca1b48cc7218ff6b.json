@@ -27,7 +27,7 @@
 					[
 						0
 					],
-					"name" : "task_parallelism",
+					"name" : "src/task_parallelism",
 					"targetIndexes" : 
 					[
 						0
@@ -39,7 +39,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "task_parallelism::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-task_parallelism-Debug-005fa1264e17cb1845cc.json",
+					"jsonFile" : "target-task_parallelism-Debug-086c166a2217ee14e775.json",
 					"name" : "task_parallelism",
 					"projectIndex" : 0
 				}

@@ -10,6 +10,7 @@
 #include <ctime>
 #include <numeric>
 #include <omp.h>
+#include <chrono>
 
 int recursion_count = 0;
 int maximum = -1;
@@ -233,6 +234,7 @@ bool Graph::has_potential(const vector<bool>& subgraph_edges, int maximum, int w
 }
 
 void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes, int node_depth, int weight) {
+#pragma omp atomic
     recursion_count ++;
 
     // stop conditions
@@ -242,13 +244,21 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
 
         // save maximum
         if (current_weight >= maximum &&
-        is_coherent(translated_edges) &&
-        all_of(bipartite_nodes.begin(), bipartite_nodes.end(), [](BIPART i){return i != NONE;})) {
+            is_coherent(translated_edges) &&
+            all_of(bipartite_nodes.begin(), bipartite_nodes.end(), [](BIPART i){return i != NONE;})){
+#pragma omp critical
+            if (current_weight >= maximum &&
+                is_coherent(translated_edges) &&
+                all_of(bipartite_nodes.begin(), bipartite_nodes.end(), [](BIPART i){return i != NONE;})) {
                 if (current_weight > maximum)
                     solutions.clear();
                 maximum = current_weight;
-//                cout << maximum << endl;
+//                cout<< maximum;
+//                for (auto i: subgraph_edges)
+//                    cout << " " << i;
+//                cout << endl;
                 solutions.push_back(translated_edges);
+            }
         }
         return;
     }
@@ -260,44 +270,70 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
     int i = subgraph_edges.size();
     int f = this->edges_vertices[i].first;
     int s = this->edges_vertices[i].second;
+    int new_weight = weight + this->edges_weight[f][s];
 
-    // 1) take edge
-    vector<bool> new_subgraph_edges_with = subgraph_edges;
-    new_subgraph_edges_with.push_back(true);
-    vector<BIPART> new_nodes = bipartite_nodes;
-    bool predefined_vertices = false;
-    if ((bipartite_nodes[f] == ONE && bipartite_nodes[s] == TWO) ||
+#pragma omp task shared(subgraph_edges, weight, bipartite_nodes, f, s, new_weight) firstprivate(node_depth) default(none) if(node_depth % 15 == 0)
+    {
+//        if(node_depth > 10)
+//            node_depth = 0;
+        // 1) take edge
+        vector<bool> new_subgraph_edges_with = subgraph_edges;
+        new_subgraph_edges_with.push_back(true);
+        vector<BIPART> new_nodes = bipartite_nodes;
+        bool predefined_vertices = false;
+        if ((bipartite_nodes[f] == ONE && bipartite_nodes[s] == TWO) ||
             (bipartite_nodes[f] == TWO && bipartite_nodes[s] == ONE)) {
-        predefined_vertices = true;
-        calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth,
-                      weight + this->edges_weight[f][s]);
-    }
-    else if (bipartite_nodes[f] == NONE &&
-            bipartite_nodes[s] != NONE) {
-        new_nodes[f] = (bipartite_nodes[s] == ONE ? TWO : ONE);
-        calculate_aux(new_subgraph_edges_with, new_nodes, ++ node_depth, weight + this->edges_weight[f][s]);
-    }
-    else if (bipartite_nodes[f] != NONE &&
-            bipartite_nodes[s] == NONE) {
-        new_nodes[s] = (bipartite_nodes[f] == ONE ? TWO : ONE);
-        calculate_aux(new_subgraph_edges_with, new_nodes, ++ node_depth, weight + this->edges_weight[f][s]);
-    }
-    else if (bipartite_nodes[f] == NONE &&
-             bipartite_nodes[s] == NONE) {
-        new_nodes[f] = ONE;
-        new_nodes[s] = TWO;
-        calculate_aux(new_subgraph_edges_with, new_nodes, ++ node_depth, weight + this->edges_weight[f][s]);
-        new_nodes[s] = ONE;
-        new_nodes[f] = TWO;
-        calculate_aux(new_subgraph_edges_with, new_nodes, ++ node_depth, weight + this->edges_weight[f][s]);
+            predefined_vertices = true;
+//# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
+            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+        } else if (bipartite_nodes[f] == NONE &&
+                   bipartite_nodes[s] != NONE) {
+            new_nodes[f] = (bipartite_nodes[s] == ONE ? TWO : ONE);
+//# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
+            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+        } else if (bipartite_nodes[f] != NONE &&
+                   bipartite_nodes[s] == NONE) {
+            new_nodes[s] = (bipartite_nodes[f] == ONE ? TWO : ONE);
+//# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
+            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+        } else if (bipartite_nodes[f] == NONE &&
+                   bipartite_nodes[s] == NONE) {
+            new_nodes[f] = ONE;
+            new_nodes[s] = TWO;
+//# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
+            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+        }
     }
 
-    // 2) dont take edge
-    if (!predefined_vertices) {
-        vector<bool> new_subgraph_edges_without = subgraph_edges;
-        new_subgraph_edges_without.push_back(false);
-        calculate_aux(new_subgraph_edges_without, bipartite_nodes, ++node_depth, weight);
+    if (bipartite_nodes[f] == NONE &&
+        bipartite_nodes[s] == NONE) {
+#pragma omp task firstprivate(subgraph_edges, weight, bipartite_nodes, f, s, new_weight) firstprivate(node_depth) default(none) if(node_depth % 15 == 0)
+        {
+            vector<bool> new_subgraph_edges_with = subgraph_edges;
+            new_subgraph_edges_with.push_back(true);
+            vector<BIPART> new_nodes = bipartite_nodes;
+            new_nodes[s] = ONE;
+            new_nodes[f] = TWO;
+            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+        }
     }
+
+#pragma omp task shared(subgraph_edges, weight, bipartite_nodes, f, s) firstprivate(node_depth) default(none) if(node_depth % 15 == 0)
+    {
+//        if(node_depth > 10)
+//            node_depth = 0;
+        int new_weight2 = weight;
+        // 2) dont take edge
+        if (!((bipartite_nodes[f] == ONE && bipartite_nodes[s] == TWO) ||
+              (bipartite_nodes[f] == TWO && bipartite_nodes[s] == ONE))) {
+            vector<bool> new_subgraph_edges_without = subgraph_edges;
+            new_subgraph_edges_without.push_back(false);
+            const vector<BIPART>& new_nodes2 = bipartite_nodes;
+//# pragma omp task default(none) shared(new_subgraph_edges_without, new_nodes2, node_depth, new_weight2)
+            calculate_aux(new_subgraph_edges_without, new_nodes2, ++node_depth, new_weight2);
+        }
+    }
+# pragma omp taskwait
 }
 
 void Graph::calculate() {
@@ -315,14 +351,22 @@ void Graph::calculate() {
     // get current time
     clock_t start;
     start = clock();
+    auto t1 = std::chrono::high_resolution_clock::now();
 
     // calculate MBP
-    calculate_aux(subgraph_edges, bipartite_nodes, 0, 0);
+#pragma omp parallel default(none) shared(subgraph_edges, bipartite_nodes) num_threads(1)
+    {
+#pragma omp single
+        calculate_aux(subgraph_edges, bipartite_nodes, 0, 0);
+    }
+
+    auto t2 = std::chrono::high_resolution_clock::now();
 
     // calculate duration in seconds
     double duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
+    double duration_realtime = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0;
 
     // print output
     cout << this->filepath << " -- Solution: " << maximum << " (" << solutions.size() << ") "
-    << "(" << duration << " s) (recursion - " << recursion_count << " )" << endl;
+    << "(" << duration << " / " << duration_realtime << " s) (recursion - " << recursion_count << " )" << endl;
 }
