@@ -11,7 +11,32 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="72db80a5-227f-41ab-9261-9d68ddb8bb45" name="Changes" comment="" />
+    <list default="true" id="72db80a5-227f-41ab-9261-9d68ddb8bb45" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/graf_mbp/graf_12_9.txt" beforeDir="false" afterPath="$PROJECT_DIR$/graf_12_9.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.cmake/api/v1/reply/cache-v2-2db95f50a245d4d6812b.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.cmake/api/v1/reply/cmakeFiles-v1-90192a0f96567472a707.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.cmake/api/v1/reply/codemodel-v2-e06ca8054b2b096a2df4.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.cmake/api/v1/reply/index-2022-03-14T15-06-15-0558.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.cmake/api/v1/reply/target-task_parallelism-Debug-005fa1264e17cb1845cc.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.ninja_deps" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.ninja_deps" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.ninja_log" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/.ninja_log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeCache.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeCache.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/CMakeOutput.log" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/CMakeOutput.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/rules.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/rules.ninja" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/task_parallelism.dir/src/Graph.cpp.o" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/task_parallelism.dir/src/Graph.cpp.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/task_parallelism.dir/src/Instance_handler.cpp.o" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/task_parallelism.dir/src/Instance_handler.cpp.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/task_parallelism.dir/src/main.cpp.o" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/CMakeFiles/task_parallelism.dir/src/main.cpp.o" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/Testing/Temporary/LastTest.log" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/Testing/Temporary/LastTest.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/build.ninja" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/build.ninja" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/task_parallelism" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/cmake-build-debug/task_parallelism" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/graf_15_8.txt" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/graf_mbp/graf_15_8.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../02/task_parallelism/src/Graph.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/../../02/task_parallelism/src/Graph.cpp" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -46,21 +71,16 @@
     <property name="cf.first.check.clang-format" value="false" />
     <property name="cidr.known.project.marker" value="true" />
     <property name="cmake.loaded.for.project" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../sequential2" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="settings.editor.selected.configurable" value="dynamic.analysis.tools.perf.profiler" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/graf_mbp" />
       <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/graf_mbp" />
     </key>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="sequential" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="sequential" TARGET_NAME="sequential" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="sequential" RUN_TARGET_NAME="sequential">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -84,11 +104,24 @@
       <workItem from="1646042386746" duration="9665000" />
       <workItem from="1646128351511" duration="23900000" />
       <workItem from="1647247098806" duration="15997000" />
+      <workItem from="1647342211025" duration="5432000" />
+      <workItem from="1647413047808" duration="633000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="XDebuggerManager">
     <watches-manager>
