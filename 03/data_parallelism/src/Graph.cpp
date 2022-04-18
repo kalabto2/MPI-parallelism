@@ -328,7 +328,7 @@ void Graph::calculate() {
     get_n_subgraphs(starting_states, input_states, 100);
 
     cout << "SIZE: " << starting_states.size() << endl;
-#pragma omp parallel for default(none) shared(starting_states) schedule(dynamic) num_threads(4)
+#pragma omp parallel for default(none) shared(starting_states) schedule(dynamic)
     for (auto & starting_state : starting_states) {
         calculate_aux(starting_state.subgraph_edges,
                       starting_state.bipartite_nodes,

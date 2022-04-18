@@ -36,6 +36,6 @@ void Instance_handler::test_all() {
         graph->calculate();
 
         string name = fp.substr(fp.size() - 13, 13);
-        std::cout << "\t\t\t\t\t\t\t  Correct: " << this->correct_solutions[name] << std::endl;
+        std::cout << "\t\t\t    Correct: " << this->correct_solutions[name] << std::endl;
     }
 }
