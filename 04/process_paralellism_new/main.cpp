@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include <vector>
 #include <string>
 #include <fstream>
@@ -6,9 +7,19 @@
 #include <ctime>
 #include <chrono>
 #include <omp.h>
-//#include <mpi.h>
+#include <mpi.h>
 #include <memory>
+#include <queue>
 
+
+#define LENGTH 10000
+#define TAG_WORK 0
+#define TAG_FINISHED 1
+#define TAG_TERMINATE 2
+
+
+//#define DEBUG
+//#define DEBUG_PACKING
 
 using namespace std;
 
@@ -16,16 +27,126 @@ enum BIPART {
     ONE, TWO, NONE
 };
 
+int position = 0;
+char buffer[LENGTH];
+
+int recursion_count = 0;
+int maximum = -1;
+//vector<vector<vector<bool>>> solutions;
+
 class STATE {
 public:
+    STATE() {}
     STATE(vector<bool> subgraphEdges, vector<BIPART> bipartiteNodes, int nodeDepth, int weight)
-            : subgraph_edges(subgraphEdges), bipartite_nodes(bipartiteNodes), node_depth(nodeDepth), weight(weight) {}
+            : subgraph_edges(std::move(subgraphEdges)), bipartite_nodes(std::move(bipartiteNodes)), node_depth(nodeDepth), weight(weight) {}
 
-    const vector<BIPART> bipartite_nodes;
-    const vector<bool> subgraph_edges;
+    vector<BIPART> bipartite_nodes;
+    vector<bool> subgraph_edges;
     int node_depth;
     int weight;
 };
+
+void packMPI (const vector<STATE> & states, const int global_maximum) {
+    int position = 0;
+
+    int states_size = (int)states.size();
+    MPI_Pack(&states_size, 1, MPI_INT, buffer, LENGTH, &position, MPI_COMM_WORLD);
+    MPI_Pack(&global_maximum, 1, MPI_INT, buffer, LENGTH, &position, MPI_COMM_WORLD);
+
+    for (auto state: states){
+#ifdef DEBUG_PACKING
+        cout << "PACKING: [";
+        cout << state.weight << endl;
+        cout << state.node_depth << endl;
+        for (auto e : state.subgraph_edges)
+            cout << e << " ";
+        cout << endl;
+        for (auto e : state.bipartite_nodes)
+            cout << e << " ";
+        cout << endl;
+#endif
+        MPI_Pack(&state.weight, 1, MPI_INT, buffer, LENGTH, &position, MPI_COMM_WORLD);
+        MPI_Pack(&state.node_depth, 1, MPI_INT, buffer, LENGTH, &position, MPI_COMM_WORLD);
+
+        unsigned edges_size = state.subgraph_edges.size();
+        int * e_formated = new int [edges_size];
+        for (int i = 0; i < edges_size; i ++)
+            e_formated[i] = state.subgraph_edges[i];
+
+        MPI_Pack(&edges_size, 1, MPI_UNSIGNED, buffer, LENGTH, &position, MPI_COMM_WORLD);
+        MPI_Pack(e_formated, (int)edges_size, MPI_INT, buffer,
+                 LENGTH, &position, MPI_COMM_WORLD);
+
+        unsigned nodes_size = state.bipartite_nodes.size();
+        int * n_formated = new int [nodes_size];
+        for (int i = 0; i < nodes_size; i ++)
+            n_formated[i] = state.bipartite_nodes[i];
+
+        MPI_Pack(&nodes_size, 1, MPI_UNSIGNED, buffer, LENGTH, &position, MPI_COMM_WORLD);
+        MPI_Pack(n_formated, (int)nodes_size, MPI_INT,
+                 buffer, LENGTH, &position, MPI_COMM_WORLD);
+
+        delete[] n_formated;
+        delete[] e_formated;
+    }
+
+}
+
+void unpackMPI(vector<STATE> & states)
+{
+    position = 0;
+    int new_maximum;
+    int state_size;
+    MPI_Unpack(buffer, LENGTH, &position, &state_size, 1, MPI_INT, MPI_COMM_WORLD);
+    MPI_Unpack(buffer, LENGTH, &position, &new_maximum, 1, MPI_INT, MPI_COMM_WORLD);
+
+#pragma omp critical
+    maximum = new_maximum;
+
+    for (int j = 0; j < state_size; j ++) {
+        STATE state;
+
+        MPI_Unpack(buffer, LENGTH, &position, &state.weight, 1, MPI_INT, MPI_COMM_WORLD);
+        MPI_Unpack(buffer, LENGTH, &position, &state.node_depth, 1, MPI_INT, MPI_COMM_WORLD);
+
+        unsigned edges_size, node_size;
+        MPI_Unpack(buffer, LENGTH, &position, &edges_size, 1, MPI_UNSIGNED, MPI_COMM_WORLD);
+        int *e_formated = new int[edges_size];
+        state.subgraph_edges.resize(edges_size);
+        MPI_Unpack(buffer, LENGTH, &position, e_formated, (int) edges_size, MPI_INT, MPI_COMM_WORLD);
+        for (int i = 0; i < edges_size; i++)
+            state.subgraph_edges[i] = e_formated[i];
+
+        MPI_Unpack(buffer, LENGTH, &position, &node_size, 1, MPI_UNSIGNED, MPI_COMM_WORLD);
+        int *n_formated = new int[node_size];
+        state.bipartite_nodes.resize(node_size);
+        MPI_Unpack(buffer, LENGTH, &position, n_formated, node_size, MPI_INT, MPI_COMM_WORLD);
+        for (int i = 0; i < node_size; i++)
+            state.bipartite_nodes[i] = (BIPART) n_formated[i];
+
+        states.push_back(state);
+
+#ifdef DEBUG_PACKING
+        cout << "unpacking: " << endl;
+        cout << "--------------" << endl;
+        cout << ">> e_size: " << edges_size << endl;
+        cout << ">> n_size: " << node_size << endl;
+        cout << state.weight << endl;
+        cout << state.node_depth << endl;
+
+        for (auto e : state.subgraph_edges)
+            cout << e << " ";
+        cout << endl;
+        for (auto e : state.bipartite_nodes)
+            cout << e << " ";
+        cout << endl;
+#endif
+
+        delete[] n_formated;
+        delete[] e_formated;
+    }
+}
+
 
 class Graph {
 private:
@@ -51,6 +172,8 @@ private:
     vector<pair<int, int>> edges_vertices;
 
 public:
+    vector<STATE> solution;
+
     explicit Graph(const string & filepath);
 
     void calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes, int node_depth, int weight);
@@ -71,14 +194,10 @@ public:
 
     static bool is_bipartite(vector<BIPART> bipartite_nodes, const vector< vector<bool> >& edges);
 
-    void get_n_subgraphs(vector<STATE> &output_states, const vector<STATE> &input_states, int n);
+    void get_n_subgraphs(vector<STATE> &output_states, const vector<STATE> &input_states, int n, int depth);
 };
 
 // ================================================================================================
-
-int recursion_count = 0;
-int maximum = -1;
-vector<vector<vector<bool>>> solutions;
 
 string readFileIntoString(const string& path) {
     ifstream input_file(path);
@@ -286,11 +405,11 @@ vector<vector<bool>> Graph::translate_vector_to_edges  (const vector<bool>& edge
 bool Graph::has_potential(const vector<bool>& subgraph_edges, int maximum, int weight) {
     int curr_e = subgraph_edges.size();
 
-    int total = 0;
+    int resting_weight = 0;
     for (int i = curr_e; i < this->e; i ++) {
-        total += this->edges_weight_redux[i];
+        resting_weight += this->edges_weight_redux[i];
     }
-    return weight + total >= maximum;
+    return weight + resting_weight >= maximum;
 }
 
 void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes,
@@ -312,10 +431,9 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
                 is_coherent(translated_edges) &&
                 all_of(bipartite_nodes.begin(), bipartite_nodes.end(), [](BIPART i){return i != NONE;})) {
                 if (current_weight > maximum)
-                    solutions.clear();
+                    this->solution.clear();
                 maximum = current_weight;
-//                cout << maximum << endl;
-                solutions.push_back(translated_edges);
+                this->solution.emplace_back(subgraph_edges, bipartite_nodes, node_depth, current_weight);
             }
         }
 
@@ -370,52 +488,182 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
 }
 
 void Graph::calculate() {
-//    MPI_Init(NULL, NULL);
+    int proc_rank, num_processes;
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+    MPI_Status status;
 
+    // ----------------
+    vector<STATE> solutions;
+    int solution_weight = -1;
 
-    // clear global variables
-    recursion_count = 0;
-    maximum = -1;
-    solutions.clear();
+    // ================ MASTER ================
+    if (proc_rank == 0) {
+        // prepare graph
+        vector<bool> subgraph_edges;
+        vector<BIPART> bipartite_nodes;
+        bipartite_nodes.assign(this->n, BIPART::NONE);
+        bipartite_nodes[0] = BIPART::ONE;
 
-    // prepare graph
-    vector<bool> subgraph_edges;
-    vector<BIPART> bipartite_nodes;
-    bipartite_nodes.assign(this->n, BIPART::NONE);
-    bipartite_nodes[0] = BIPART::ONE;
+        // retrieve n disjunctive sub-graphs
+        vector<STATE> queue;
+        vector<STATE> init_state;
+        init_state.emplace_back(subgraph_edges, bipartite_nodes, 0, 0);
+        get_n_subgraphs(queue, init_state, 200, 0);
 
-    // get current time
-    clock_t start;
-    start = clock();
-    auto t1 = std::chrono::high_resolution_clock::now();
+        ::queue<int> free = {};
 
-    // retrieve n disjunctive sub-graphs
-    vector<STATE> starting_states;
-    vector<STATE> input_states;
-    input_states.emplace_back(subgraph_edges, bipartite_nodes, 0, 0);
-    get_n_subgraphs(starting_states, input_states, 100);
+        // send to all slaves work to do
+        for (int i = 1; i < num_processes; i ++){
+            STATE job = queue.back();
+            queue.pop_back();
+            vector<STATE> states;
+            states.push_back(job);
 
-    cout << "SIZE: " << starting_states.size() << endl;
-#pragma omp parallel for default(none) shared(starting_states) schedule(dynamic) num_threads(4)
-    for (auto & starting_state : starting_states) {
-        calculate_aux(starting_state.subgraph_edges,
-                      starting_state.bipartite_nodes,
-                      starting_state.node_depth,
-                      starting_state.weight);
+            // pack
+            packMPI(states, solution_weight);
+
+            // send
+            MPI_Send(buffer, LENGTH, MPI_PACKED, i, TAG_WORK, MPI_COMM_WORLD);
+#ifdef DEBUG
+            cout << "M: send job" << endl;
+#endif
+        }
+
+        int num_working_slaves = num_processes - 1;
+
+        while (true)
+        {
+            if (queue.empty() && free.size() == num_working_slaves)
+                break;
+            int flag = 0;
+            MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+
+            // read received data
+            if (flag && status.MPI_TAG == TAG_FINISHED)
+            {
+                MPI_Recv(buffer, LENGTH, MPI_PACKED, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+                vector<STATE> states;
+                // unpack
+                unpackMPI(states);
+
+                // send new task if available
+                if (!queue.empty()) {
+                    STATE job = queue.back();
+                    queue.pop_back();
+                    vector<STATE> states;
+                    states.push_back(job);
+
+                    // pack
+                    packMPI(states, maximum);
+                    // send
+                    MPI_Send(buffer, LENGTH, MPI_PACKED, status.MPI_SOURCE, TAG_WORK, MPI_COMM_WORLD);
+#ifdef DEBUG
+                    cout << "M: sent job" << endl;
+#endif
+                } else {
+#ifdef DEBUG
+                    cout << "M: no job lefts" << endl;
+#endif
+                    MPI_Send(buffer, 0, MPI_C_BOOL, status.MPI_SOURCE, TAG_TERMINATE, MPI_COMM_WORLD);
+                    free.push(status.MPI_SOURCE);
+                }
+
+                // check if global maximum and save
+                if (solution_weight <= maximum) {
+                    if (solution_weight <= maximum)
+                        this->solution.clear();
+                    for (const auto& s: states) {
+                        this->solution.push_back(s);
+                    }
+                    solution_weight = maximum;
+                }
+
+            }
+        }
+#ifdef DEBUG
+        cout << "GLOBAL MAXIMUM: " << solution_weight << endl;
+        cout << "M: master ends" << endl;
+#endif
+    } // ================ SLAVE ================
+    else {
+        while (true)
+        {
+//            this->solution.clear();
+
+            MPI_Recv(buffer, LENGTH, MPI_PACKED, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+#ifdef DEBUG
+            cout << "S" << proc_rank << ": recieved " << endl;
+#endif
+            if (status.MPI_TAG == TAG_TERMINATE)
+                break;
+            else if (status.MPI_TAG == TAG_WORK)
+            {
+                vector<STATE> states;
+                unpackMPI(states);
+                STATE job = states[0];
+
+//                cout << "sss " << states.size() << endl;
+//                cout << "-------------------" << endl;
+//                cout << states[0].node_depth << " " << states[0].weight << endl;
+//                cout << states[0].subgraph_edges.size() << endl;
+//                for (auto e : states[0].subgraph_edges)
+//                    cout << e << "|";
+//                cout << endl;
+//                for (auto e : states[0].bipartite_nodes)
+//                    cout << e << "|";
+//                cout << endl;
+//                cout << "-------------------" << endl;
+
+                // retrieve n disjunctive sub-graphs
+//                vector<STATE> queue;
+//                vector<STATE> init_state;
+//                init_state.push_back(job);
+//                get_n_subgraphs(queue, init_state, 10, job.node_depth);
+
+                calculate_aux(job.subgraph_edges,
+                                  job.bipartite_nodes,
+                                  job.node_depth,
+                                  job.weight);
+
+//                // compute
+//#pragma omp parallel for default(none) shared(queue) schedule(dynamic) num_threads(1)
+//                for (auto & starting_state : queue) {
+//                    calculate_aux(starting_state.subgraph_edges,
+//                                  starting_state.bipartite_nodes,
+//                                  starting_state.node_depth,
+//                                  starting_state.weight);
+//                }
+
+                // returning solutions
+//                STATE slave_solution;
+//                slave_solution.weight = maximum;
+//                slave_solution.node_depth = 0;  // not important
+//                slave_solution.bipartite_nodes = ;
+//                slave_solution.subgraph_edges = translate(solutions[0]);
+
+#ifdef DEBUG
+//                cout << "S" << proc_rank << ": n_states: " << queue.size() << endl;
+                cout << "S" << proc_rank << ": calculated maximum: " << maximum << endl;
+#endif
+
+                packMPI(this->solution, maximum);
+
+                // send to master
+                MPI_Send(buffer, LENGTH, MPI_PACKED, 0, TAG_FINISHED, MPI_COMM_WORLD);
+            }
+        }
+#ifdef DEBUG
+        cout << "S" << proc_rank << ": ends" << endl;
+#endif
     }
-
-    auto t2 = std::chrono::high_resolution_clock::now();
-
-    // calculate duration in seconds
-    double duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
-    double duration_realtime = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0;
-
-    // print output
-    cout << this->filepath << " -- Solution: " << maximum << " (" << solutions.size() << ") "
-         << "(" << duration << " / " << duration_realtime << " s) (recursion - " << recursion_count << " )" << endl;
 }
 
-void Graph::get_n_subgraphs(vector<STATE> &output_states, const vector<STATE> &input_states, int n) {
+void Graph::get_n_subgraphs(vector<STATE> &output_states, const vector<STATE> &input_states, int n, int depth) {
+    // end if done
+    if (depth > this->n)
+        return;
+
     vector<STATE> states;
     for (const auto& input_state : input_states){
         int i = input_state.subgraph_edges.size();
@@ -465,15 +713,39 @@ void Graph::get_n_subgraphs(vector<STATE> &output_states, const vector<STATE> &i
     if (states.size() >= n)
         output_states = move(states);
     else
-        get_n_subgraphs(output_states, states, n);
+        get_n_subgraphs(output_states, states, n, ++ depth);
 }
 
 
 int main(int argc, char ** argv) {
+    MPI_Init(&argc, &argv);
+    int proc_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
+
     string fp = string(argv[1]);
     unique_ptr<Graph> graph (new Graph(fp));
+
+    // start time
+    clock_t start;
+    start = clock();
+    auto t1 = std::chrono::high_resolution_clock::now();
+
     graph->calculate();
 
+    // stop time - calculate duration in seconds
+    auto t2 = std::chrono::high_resolution_clock::now();
+    double duration = (double)( clock() - start ) / (double) CLOCKS_PER_SEC;
+    double duration_realtime = (double)std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0;
 
+    // print output
+    if (proc_rank == 0){
+        cout << "------------------------" << endl;
+        cout << "FILEPATH: " << fp << endl;
+        cout << "DURATION: " << duration << " / " << duration_realtime << endl;
+        cout << "SOLUTION: " << graph->solution[0].weight << " (" << graph->solution.size() << ")" << endl;
+        cout << "------------------------" << endl;
+    }
+
+    MPI_Finalize();
     return 0;
 }

@@ -12,9 +12,9 @@ if (OPENMP_FOUND)
 endif()
 
 # Add MPI Package to Project
-#find_package(MPI REQUIRED)
+find_package(MPI REQUIRED)
 
 add_executable(process_paralellism_new main.cpp)
 
 # Add libraries for code completion and compiling
-#target_link_libraries(process_paralellism_new PUBLIC MPI::MPI_CXX)
+target_link_libraries(process_paralellism_new PUBLIC MPI::MPI_CXX)
