@@ -1,3 +1,0 @@
-/home/tomas/fit/ni/pdp/ni-pdp/04/process_parallelism/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/tomas/fit/ni/pdp/ni-pdp/04/process_parallelism/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/tomas/fit/ni/pdp/ni-pdp/04/process_parallelism/cmake-build-debug/CMakeFiles/process_parallelism.dir

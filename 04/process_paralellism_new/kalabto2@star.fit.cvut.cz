@@ -10,7 +10,7 @@
 #include <mpi.h>
 #include <memory>
 #include <queue>
-#include <algorithm>
+
 
 #define LENGTH 10000
 #define TAG_WORK 0
@@ -521,21 +521,6 @@ void Graph::calculate() {
         init_state.emplace_back(subgraph_edges, bipartite_nodes, 0, 0);
         get_n_subgraphs(queue, init_state, 50, 0);
 
-#ifdef DEBUG
-        cout << "SIZE: " << queue.size() << endl;
-        for (auto s: queue) {
-                cout << s.weight << " " << s.node_depth << " ";
-                for (auto i : s.subgraph_edges)
-                    cout << i;
-                cout << " ";
-                for (auto i: s.bipartite_nodes)
-                    cout << i;
-                cout << endl;
-        }
-#endif
-
-        reverse(queue.begin(), queue.end());
-
         ::queue<int> free = {};
 
         // send to all slaves work to do
@@ -627,17 +612,6 @@ void Graph::calculate() {
                 vector<STATE> states;
                 unpackMPI(states);
                 STATE job = states[0];
-#ifdef  DEBUG
-                cout << "S" << proc_rank << ": ";
-                cout << job.weight << " " << job.node_depth << " ";
-                for (auto i : job.subgraph_edges)
-                    cout << i;
-                cout << " ";
-                for (auto i: job.bipartite_nodes)
-                    cout << i;
-                cout << endl;
-#endif
-                auto t1 = std::chrono::high_resolution_clock::now();
 /*
 //                cout << "sss " << states.size() << endl;
 //                cout << "-------------------" << endl;
@@ -671,7 +645,6 @@ void Graph::calculate() {
 //                                  job.weight);
 
                 // compute
-                size_t ii = 0;
 #pragma omp parallel for default(none) shared(queue) schedule(dynamic)
                 for (auto & starting_state : queue) {
                     calculate_aux(starting_state.subgraph_edges,
@@ -679,7 +652,6 @@ void Graph::calculate() {
                                   starting_state.node_depth,
                                   starting_state.weight);
                 }
-
 
                 // returning solutions
 //                STATE slave_solution;
@@ -690,11 +662,7 @@ void Graph::calculate() {
 
 #ifdef DEBUG
 //                cout << "S" << proc_rank << ": n_states: " << queue.size() << endl;
-                // stop time - calculate duration in seconds
-                auto t2 = std::chrono::high_resolution_clock::now();
-                double duration_realtime = (double)std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0;
-
-                cout << "S" << proc_rank << ": calculated maximum: " << maximum << " in "<< duration_realtime << endl;
+                cout << "S" << proc_rank << ": calculated maximum: " << maximum << endl;
 #endif
 
                 packMPI(this->solution, maximum);

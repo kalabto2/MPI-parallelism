@@ -1,7 +1,0 @@
-/home/tomas/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/tomas/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/213.6777.58/bin/ninja/linux/ninja -G Ninja /home/tomas/fit/ni/pdp/ni-pdp/04/process_parallelism
--- Found OpenMP_C: -fopenmp (found version "4.5") 
--- Found OpenMP_CXX: -fopenmp (found version "4.5") 
--- Found OpenMP: TRUE (found version "4.5")  
--- Configuring done
--- Generating done
--- Build files have been written to: /home/tomas/fit/ni/pdp/ni-pdp/04/process_parallelism/cmake-build-debug
