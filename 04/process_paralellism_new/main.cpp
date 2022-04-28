@@ -20,6 +20,7 @@
 
 //#define DEBUG
 //#define DEBUG_PACKING
+#define CSV
 
 using namespace std;
 
@@ -160,6 +161,16 @@ void unpackMPI(vector<STATE> & states)
 
 class Graph {
 private:
+    /// weighted edges_weight between interval <80,120>
+    vector < vector<int> > edges_weight;
+
+    /// reduced representation of edges
+    vector<int> edges_weight_redux;
+
+    /// incident vertices with edge
+    vector<pair<int, int>> edges_vertices;
+
+public:
     /// number representing number of nodes - 50 > n >= 10
     int n;
 
@@ -172,19 +183,11 @@ private:
     /// filepath to
     string filepath;
 
-    /// weighted edges_weight between interval <80,120>
-    vector < vector<int> > edges_weight;
+    int nt;
 
-    /// reduced representation of edges
-    vector<int> edges_weight_redux;
-
-    /// incident vertices with edge
-    vector<pair<int, int>> edges_vertices;
-
-public:
     vector<STATE> solution;
 
-    explicit Graph(const string & filepath);
+    explicit Graph(const string & filepath, int nt);
 
     void calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes, int node_depth, int weight);
 
@@ -230,7 +233,8 @@ int retrieve_k(const string & fp) {
     return stoi(line);
 }
 
-Graph::Graph(const string &filepath) {
+Graph::Graph(const string &filepath, int nt) {
+    this->nt = nt;
     this->filepath = filepath;
     string file_content = readFileIntoString(filepath);
     stringstream ss(file_content);
@@ -672,7 +676,7 @@ void Graph::calculate() {
 
                 // compute
                 size_t ii = 0;
-#pragma omp parallel for default(none) shared(queue) schedule(dynamic)
+#pragma omp parallel for default(none) shared(queue) schedule(dynamic) num_threads(this->nt)
                 for (auto & starting_state : queue) {
                     calculate_aux(starting_state.subgraph_edges,
                                   starting_state.bipartite_nodes,
@@ -775,7 +779,8 @@ int main(int argc, char ** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &proc_rank);
 
     string fp = string(argv[1]);
-    unique_ptr<Graph> graph (new Graph(fp));
+    int nt = stoi(string(argv[2]));
+    unique_ptr<Graph> graph (new Graph(fp, nt));
 
     // start time
     clock_t start;
@@ -791,11 +796,21 @@ int main(int argc, char ** argv) {
 
     // print output
     if (proc_rank == 0){
+#ifndef CSV
         cout << "------------------------" << endl;
         cout << "FILEPATH: " << fp << endl;
         cout << "DURATION: " << duration << " / " << duration_realtime << endl;
         cout << "SOLUTION: " << graph->solution[0].weight << " (" << graph->solution.size() << ")" << endl;
         cout << "------------------------" << endl;
+#else
+        int num_processes;
+        MPI_Comm_size(MPI_COMM_WORLD, &num_processes);
+            // output to csv
+        string sep = ";";
+        // filepath, n, k, solution, # solutions, duration in seconds, running threads, running processes
+        cout << graph->filepath << sep << graph->n << sep << graph->e << sep << maximum << sep << graph->solution.size() <<
+             sep << duration_realtime << sep << graph->nt << sep << num_processes << endl;
+#endif
     }
 
     MPI_Finalize();
