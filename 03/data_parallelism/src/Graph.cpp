@@ -11,6 +11,8 @@
 #include <chrono>
 #include <omp.h>
 
+#define CSV
+
 int recursion_count = 0;
 int maximum = -1;
 vector<vector<vector<bool>>> solutions;
@@ -36,7 +38,8 @@ int retrieve_k(const string & fp) {
     return stoi(line);
 }
 
-Graph::Graph(const string &filepath) {
+Graph::Graph(const string &filepath, int num_threads) {
+    this->num_threads = num_threads;
     this->filepath = filepath;
     string file_content = readFileIntoString(filepath);
     stringstream ss(file_content);
@@ -325,10 +328,10 @@ void Graph::calculate() {
     vector<STATE> starting_states;
     vector<STATE> input_states;
     input_states.emplace_back(subgraph_edges, bipartite_nodes, 0, 0);
-    get_n_subgraphs(starting_states, input_states, 100);
+    get_n_subgraphs(starting_states, input_states, 150);
 
-    cout << "SIZE: " << starting_states.size() << endl;
-#pragma omp parallel for default(none) shared(starting_states) schedule(dynamic)
+    // calculate task parallelism
+#pragma omp parallel for default(none) shared(starting_states) schedule(dynamic) num_threads(this->num_threads)
     for (auto & starting_state : starting_states) {
         calculate_aux(starting_state.subgraph_edges,
                       starting_state.bipartite_nodes,
@@ -343,8 +346,16 @@ void Graph::calculate() {
     double duration_realtime = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0;
 
     // print output
+#ifndef CSV
     cout << this->filepath << " -- Solution: " << maximum << " (" << solutions.size() << ") "
-         << "(" << duration << " / " << duration_realtime << " s) (recursion - " << recursion_count << " )" << endl;
+    << "(" << duration << " / " << duration_realtime << " s) (recursion - " << recursion_count << " )" << endl;
+#else
+    // output to csv
+    string sep = ";";
+    // filepath, n, k, solution, # solutions, duration in seconds, running threads, running processes
+    cout << this->filepath << sep << this->n << sep << this->e << sep << maximum << sep << solutions.size() <<
+         sep << duration_realtime << sep << this->num_threads << sep << 1 << endl;
+#endif
 }
 
 void Graph::get_n_subgraphs(vector<STATE> &output_states, const vector<STATE> &input_states, int n) {

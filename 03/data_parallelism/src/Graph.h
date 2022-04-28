@@ -48,8 +48,10 @@ private:
     /// incident vertices with edge
     vector<pair<int, int>> edges_vertices;
 
+    int num_threads;
+
 public:
-    explicit Graph(const string & filepath);
+    explicit Graph(const string & filepath, int num_threads);
 
     void calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes, int node_depth, int weight);
 
