@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <string>
-#include <memory>
 
 using namespace std;
 
@@ -44,7 +43,7 @@ public:
 
     explicit Graph(const string & filepath, int num_threads);
 
-    void calculate_aux(unique_ptr<vector<bool>> subgraph_edges, unique_ptr<vector<BIPART>> bipartite_nodes, unique_ptr<int> node_depth, unique_ptr<int> weight);
+    void calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes, int node_depth, int weight);
 
     void calculate ();
 

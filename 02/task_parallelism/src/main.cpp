@@ -27,5 +27,6 @@ int main(int argc, char ** argv) {
         graph->calculate();
     }
 
+
     return 0;
 }
