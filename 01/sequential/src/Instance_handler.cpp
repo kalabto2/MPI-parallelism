@@ -4,10 +4,10 @@
 
 #include "Instance_handler.h"
 #include "Graph.h"
-
 #include <memory>
 #include <filesystem>
-#include <iostream>
+
+#define CSV
 
 
 Instance_handler::Instance_handler(const string & dir_path) {
@@ -36,6 +36,8 @@ void Instance_handler::test_all() {
         graph->calculate();
 
         string name = fp.substr(fp.size() - 13, 13);
+#ifndef CSV
         std::cout << "\t\t\t\t\t\t\t  Correct: " << this->correct_solutions[name] << std::endl;
+#endif
     }
 }

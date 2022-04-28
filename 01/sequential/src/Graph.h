@@ -53,12 +53,6 @@ public:
     int get_edges_weight(const vector< vector<bool> >& subgraph_edges);
 
     bool has_potential(const vector<bool> &subgraph_edges, int maximum, int weight);
-
-    pair<int, int> get_edge_vertices(int edge_idx);
-
-    vector<bool> translate_edges_to_vector();
-
-    static bool is_bipartite(vector<BIPART> bipartite_nodes, const vector< vector<bool> >& edges);
 };
 
 

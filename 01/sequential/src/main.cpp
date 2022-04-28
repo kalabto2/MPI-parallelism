@@ -3,9 +3,7 @@
 //
 
 #include <memory>
-#include <iostream>
 #include "Instance_handler.h"
-#include "Graph.h"
 
 using namespace std;
 

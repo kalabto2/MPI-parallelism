@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <ctime>
 
+#define CSV
+
 int recursion_count = 0;
 
 string readFileIntoString(const string& path) {
@@ -86,59 +88,6 @@ Graph::Graph(const string &filepath) {
     }
 }
 
-//void Graph::is_bipartite_aux(vector<BIPART>& nodes, int node_id) {
-//
-//}
-//
-//bool Graph::is_bipartite(const vector<vector<bool> >& edges, int node_number) {
-//    vector<BIPART> nodes;
-//    nodes.assign(node_number, NONE);
-//
-//    nodes[0] = ONE;
-//    for (int j = 0; j < node_number; j ++) {
-//        if (edges[0][j]){
-//            if (nodes[0] == ONE)
-//                nodes[j] = TWO;
-//        }
-//    }
-//
-//    for (int i = 1; i < node_number; i ++){
-//        if (nodes[i] != NONE) {
-//
-//        }
-//    }
-//
-//    int node_id = 0;
-//    for (auto & node_neighbors: edges){
-//        // check if all neighbors of node are opposite part
-//        int neighbor_id = 0;
-//        for (auto neighbor: node_neighbors){
-//            if (neighbor && (bipartite_nodes[node_id] == bipartite_nodes[neighbor_id]) && (node_id != neighbor_id))
-//                return false;
-//            neighbor_id ++;
-//        }
-//        node_id ++;
-//    }
-//
-//    return true;
-//}
-
-bool Graph::is_bipartite(vector<BIPART> bipartite_nodes, const vector<vector<bool> >& edges) {
-    int node_id = 0;
-    for (auto & node_neighbors: edges){
-        // check if all neighbors of node are opposite part
-        int neighbor_id = 0;
-        for (auto neighbor: node_neighbors){
-            if (neighbor && (bipartite_nodes[node_id] == bipartite_nodes[neighbor_id]) && (node_id != neighbor_id))
-                return false;
-            neighbor_id ++;
-        }
-        node_id ++;
-    }
-
-    return true;
-}
-
 void Graph::is_coherent_aux(const vector<vector<bool>> &edges, int node_idx, vector<bool> & visited){
     vector<bool> neighbours = edges[node_idx];
     visited[node_idx] = true;
@@ -169,85 +118,6 @@ int Graph::get_edges_weight(const vector<vector<bool>> &subgraph_edges) {
             if (subgraph_edges[i][j])
                 total_weight += this->edges_weight[i][j];
     return total_weight / 2;
-}
-
-vector<bool> translate (const vector<vector<bool>> & subgraph_edges) {
-    vector<bool> result;
-    for (int i = 0; i < subgraph_edges.size(); i ++) {
-        for (int j = 0; j < subgraph_edges[i].size(); j ++){
-            if (j > i) {
-                result.push_back(subgraph_edges[i][j]);
-            }
-        }
-    }
-
-    return result;
-}
-
-int sum_of_previous (int n) {
-    int result = 0;
-    for (int i = 0; i <= n; i ++){
-        result += i;
-    }
-    return result;
-}
-
-vector<vector<bool>> translate_back  (const vector<bool>& edges) {
-    vector<vector<bool>> translated_edges;
-    int number_of_nodes = (int) edges.size();
-    for (int i = 0; i < number_of_nodes; i ++) {
-        vector<bool> neighbors;
-        for (int j = 0; j < number_of_nodes; j ++) {
-            int idx = i * number_of_nodes - sum_of_previous(i) + j;
-            neighbors.push_back(edges[idx]);
-        }
-        translated_edges.push_back(neighbors);
-    }
-
-    return translated_edges;
-}
-//
-//void Graph::calculate_aux(vector<vector<bool>> subgraph_edges, vector<BIPART> bipartite_nodes, int &maximum,
-//                          vector<vector<vector<bool>>> &solutions) {
-//    // stop condition
-//    if (bipartite_nodes.size() == this->n){
-//        int current_weight = get_edges_weight(subgraph_edges);
-//        // save best solutions
-//        if (current_weight >= maximum){
-//            maximum = current_weight;
-//            vector<vector<bool>> solution = subgraph_edges;
-//            if (current_weight > maximum)
-//                solutions.clear();
-//            solutions.push_back(solution);
-//        }
-//        return;
-//    }
-//
-//    // go through neighbors
-//    for (int i = 0; i < subgraph_edges[bipartite_nodes.size() - 1].size(); i ++){
-//        if (subgraph_edges[bipartite_nodes.size() - 1][i]){
-//            // assign to part one
-//            vector<BIPART> b_one = bipartite_nodes;
-//            b_one.push_back(BIPART::ONE);
-//            calculate_aux(, b_one, maximum, solutions);
-//
-//            // assign to part two
-//        }
-//    }
-//
-//}
-
-vector<bool> Graph::translate_edges_to_vector () {
-    vector<bool> result;
-    for (int i = 0; i < this->edges_weight.size(); i ++) {
-        for (int j = 0; j < this->edges_weight[i].size(); j ++){
-            if (j > i && this->edges_weight[i][j] != 0) {
-                result.push_back(true);
-            }
-        }
-    }
-
-    return result;
 }
 
 vector<vector<bool>> Graph::translate_vector_to_edges  (const vector<bool>& edges) {
@@ -281,10 +151,6 @@ vector<vector<bool>> Graph::translate_vector_to_edges  (const vector<bool>& edge
     return translated_edges;
 }
 
-pair<int, int> Graph::get_edge_vertices (int edge_idx) {
-
-}
-
 bool Graph::has_potential(const vector<bool>& subgraph_edges, int maximum, int weight) {
     int curr_e = subgraph_edges.size();
 
@@ -311,7 +177,6 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
                 if (current_weight > maximum)
                     solutions.clear();
                 maximum = current_weight;
-//                cout << maximum << endl;
                 solutions.push_back(translated_edges);
         }
         return;
@@ -381,20 +246,17 @@ pair<int, int> Graph::calculate() {
     // calculate duration in seconds
     double duration = ( clock() - start ) / (double) CLOCKS_PER_SEC;
 
-//    // print outcome
-//    for (int i = 0; i < solutions[0].size(); i ++){
-//        for (int j = 0; j < solutions[0][i].size(); j++){
-//            cout << solutions[0][i][j] << " ";
-//        }
-//        cout << endl;
-//    }
-//    cout << endl << accumulate(this->edges_weight_redux.begin(), this->edges_weight_redux.end(), 0) << endl;
+#ifndef CSV
     cout << this->filepath << " -- Solution: " << maximum << " (" << solutions.size() << ") "
-    << "(" << duration << " s) (recursion - " << recursion_count << " )" << endl;
-
-//    cout << is_bipartite(, solutions[0]) << endl;
-//    cout << "is coherent? " << is_coherent(solutions[0]) << endl;
-
+        << "(" << duration << " s) (recursion - " << recursion_count << " )" << endl;
+#endif
+#ifdef CSV
+    // output to csv
+    string sep = ";";
+    // filepath, n, k, solution, # solutions, duration in seconds, running threads, running processes
+    cout << this->filepath << sep << this->n << sep << this->e << sep << maximum << sep << solutions.size() <<
+    sep << duration << sep << 1 << sep << 1 << endl;
+#endif
     recursion_count = 0;
 
     return pair(maximum, (int) solutions.size());
