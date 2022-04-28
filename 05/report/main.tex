@@ -1,0 +1,45 @@
+%imports part
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{polyglossia}
+\setdefaultlanguage{czech}
+\usepackage{csquotes}
+%\usepackage{lscape}
+\usepackage{pdflscape}
+\usepackage[table,xcdraw]{xcolor} % for colorful tables
+\usepackage{siunitx}
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily,
+  columns=fullflexible,
+  frame=single,
+  breaklines=true,
+  postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+}
+
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{url}
+
+%todos enabled
+\usepackage{todonotes}
+% todos disabled
+% \usepackage[disable]{todonotes}
+
+
+% text part
+\begin{document}
+
+%intro
+\input{pages/frontPage}
+\tableofcontents
+\newpage
+
+
+\input{pages/body}
+
+\end{document}

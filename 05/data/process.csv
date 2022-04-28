@@ -1,0 +1,64 @@
+------------------------
+FILEPATH: ./graf_mbp/graf_10_3.txt
+DURATION: 0.13 / 0.135
+SOLUTION: 1300 (2)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_10_5.txt
+DURATION: 0.17 / 0.159
+SOLUTION: 1885 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_10_6.txt
+DURATION: 0.15 / 0.142
+SOLUTION: 2000 (2)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_10_7.txt
+DURATION: 0.15 / 0.149
+SOLUTION: 2348 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_12_3.txt
+DURATION: 0.19 / 0.179
+SOLUTION: 1422 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_12_5.txt
+DURATION: 0.14 / 0.142
+SOLUTION: 2219 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_12_6.txt
+DURATION: 0.14 / 0.149
+SOLUTION: 2533 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_15_4.txt
+DURATION: 0.12 / 0.124
+SOLUTION: 2547 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_15_5.txt
+DURATION: 0.15 / 0.152
+SOLUTION: 2892 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_15_6.txt
+DURATION: 0.25 / 0.244
+SOLUTION: 3353 (1)
+------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_15_8.txt
+DURATION: 11.21 / 11.204
+SOLUTION: 3984 (1)
+------------------------
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+------------------------
+FILEPATH: ./graf_mbp/graf_12_9.txt
+DURATION: 1.86 / 1.852
+SOLUTION: 3437 (1)
+------------------------

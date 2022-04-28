@@ -1,0 +1,32 @@
+Jako semestrální práci jsem měl zadanou úlohu \textbf{MBP: bipartitní podgraf s maximální váhou}.
+Úkolem je nalézt podmnožinu hran \textbf{F} takovou, že podgraf \textbf{G}(\textbf{V},\textbf{F}) je souvislý a bipartitní a váha \textbf{F} je maximální v rámci všech možných bipartitních souvislých podgrafů \textbf{G} nad \textbf{V}. Přičemž bipartitní graf je ten, jemuž lze množinu uzlů \textbf{V} rozdělit na disjunktní podmnožiny \textbf{U} a \textbf{W} tak, že každá hrana v \textbf{E} spojuje uzel z \textbf{U} s uzlem z \textbf{W}. 
+Tato úloha byla omezena na takové grafy, jež mají váhy hran z intervalu \( <80, 120> \).
+
+Tato úloha byla řešena sekvenčně následovně. Nejprve jsem označil všechny vrcholy grafu \textit{nedefinovaný} status. První vrchol jsem označil jako \textit{část 1}. Následně jsem pomocí stromové rekurze přidával nebo nepřidával hrany a označoval vrcholy jako \textit{část 1} nebo \textit{část 2}.
+Pro co největší urychlení výpočtu jsem vytvářel takové podgrafy, které bipartitní můžou být. Tedy pokud jsem přidal hranu která již sousedila s částí 2, druhý vrchol jsem nutně obarvil částí 1 a nezkoušel jinou možnost.
+Druhým zrychlením bylo, že jsem hranu která měla oba vrcholy již validně obarvené, přidal a nezkoušel ji nepřidat.
+Třetím zrychlením bylo přidání metody ořezávaní \textit{branch and bound}. Ta spočívala v principu zapamatování si dosavadní nejlepší konfigurace podgrafů. Pokud se při výpočtu narazí na stav, který již nemá šanci zlepšit dosavadní maximum, pak se tento podstrom stavů přeskočí.
+
+Dalším případným zrychlením může být seřazení hran v sestupném pořadí podle váhy, aby maximální konfigurace byla nalezena co nejdříve a ořezávání bylo tak co nejefektivnější. To už ale má implementace nezahrnuje.
+
+Implementace počítá všechny instance, které jsou v nad-složce \verb|graf_mbp|
+přičemž každá instance musí být popsána souborem 
+
+\verb|graf_<počet vrcholů grafu>_<průměrný stupeň uzlu grafu>.txt|.
+
+Výstupem je pak maximální váha, počet těchto řešení a informační údaje jako čas výpočtu či počet rekurzí.
+
+Pro demonstraci výsledků jsem vygeneroval instance pro výpočet. 
+Jejich čas výpočtu je zachycen v následující tabulce.
+
+\FloatBarrier
+\begin{table}[]
+    \begin{tabular}{l|rrr}
+    {}                  instance &    čas &  počet vláken &  počet procesů \\
+    \hline
+    graf\_15\_8.txt &  116.05 &           1 &         1 \\
+    graf\_18\_7.txt &  227.07 &           1 &         1 \\
+    graf\_21\_6.txt &  145.42 &           1 &         1 \\
+    \end{tabular}
+\end{table}
+\FloatBarrier
