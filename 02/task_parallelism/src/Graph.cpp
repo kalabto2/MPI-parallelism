@@ -11,6 +11,9 @@
 #include <numeric>
 #include <omp.h>
 #include <chrono>
+#include <memory>
+
+#define CSV
 
 int recursion_count = 0;
 int maximum = -1;
@@ -37,7 +40,8 @@ int retrieve_k(const string & fp) {
     return stoi(line);
 }
 
-Graph::Graph(const string &filepath) {
+Graph::Graph(const string &filepath, int num_threads) {
+    this->num_threads = num_threads;
     this->filepath = filepath;
     string file_content = readFileIntoString(filepath);
     stringstream ss(file_content);
@@ -233,23 +237,23 @@ bool Graph::has_potential(const vector<bool>& subgraph_edges, int maximum, int w
     return weight + total >= maximum;
 }
 
-void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPART>& bipartite_nodes, int node_depth, int weight) {
+void Graph::calculate_aux(unique_ptr<vector<bool>> subgraph_edges, unique_ptr<vector<BIPART>> bipartite_nodes, unique_ptr<int> node_depth, unique_ptr<int> weight) {
 #pragma omp atomic
     recursion_count ++;
 
     // stop conditions
-    if (subgraph_edges.size() >= this->e){
-        vector<vector<bool>> translated_edges = this->translate_vector_to_edges(subgraph_edges);
+    if (subgraph_edges->size() >= this->e){
+        vector<vector<bool>> translated_edges = this->translate_vector_to_edges(*subgraph_edges);
         int current_weight = get_edges_weight(translated_edges);
 
         // save maximum
         if (current_weight >= maximum &&
             is_coherent(translated_edges) &&
-            all_of(bipartite_nodes.begin(), bipartite_nodes.end(), [](BIPART i){return i != NONE;})){
+            all_of(bipartite_nodes->begin(), bipartite_nodes->end(), [](BIPART i){return i != NONE;})){
 #pragma omp critical
             if (current_weight >= maximum &&
                 is_coherent(translated_edges) &&
-                all_of(bipartite_nodes.begin(), bipartite_nodes.end(), [](BIPART i){return i != NONE;})) {
+                all_of(bipartite_nodes->begin(), bipartite_nodes->end(), [](BIPART i){return i != NONE;})) {
                 if (current_weight > maximum)
                     solutions.clear();
                 maximum = current_weight;
@@ -264,61 +268,71 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
     }
 
     // cut if resting sum isn't higher than current maximum
-    if (!has_potential(subgraph_edges, maximum, weight))
+    if (!has_potential(*subgraph_edges, maximum, *weight))
         return;
 
-    int i = subgraph_edges.size();
+    int i = subgraph_edges->size();
     int f = this->edges_vertices[i].first;
     int s = this->edges_vertices[i].second;
-    int new_weight = weight + this->edges_weight[f][s];
+//    int new_weight = weight + this->edges_weight[f][s];
+    unique_ptr<int> new_weight (new int(*weight + this->edges_weight[f][s]));
+    unique_ptr<int> new_node_depth (new int(*node_depth + 1));
 
-#pragma omp task shared(subgraph_edges, weight, bipartite_nodes, f, s, new_weight) firstprivate(node_depth) default(none) if(node_depth % 15 == 0)
+//#pragma omp task shared(subgraph_edges, weight, bipartite_nodes, f, s, new_weight) firstprivate(node_depth) default(none) if(node_depth < 5)
     {
 //        if(node_depth > 10)
 //            node_depth = 0;
         // 1) take edge
-        vector<bool> new_subgraph_edges_with = subgraph_edges;
-        new_subgraph_edges_with.push_back(true);
-        vector<BIPART> new_nodes = bipartite_nodes;
-        bool predefined_vertices = false;
-        if ((bipartite_nodes[f] == ONE && bipartite_nodes[s] == TWO) ||
-            (bipartite_nodes[f] == TWO && bipartite_nodes[s] == ONE)) {
-            predefined_vertices = true;
+        unique_ptr<vector<bool>> new_subgraph_edges_with (new vector<bool> (*subgraph_edges));
+        new_subgraph_edges_with->push_back(true);
+        unique_ptr<vector<BIPART>> new_nodes (new vector<BIPART> (*bipartite_nodes));
+//        vector<bool> new_subgraph_edges_with = subgraph_edges;
+//        new_subgraph_edges_with.push_back(true);
+//        vector<BIPART> new_nodes = bipartite_nodes;
+//        bool predefined_vertices = false;
+        if (((*bipartite_nodes)[f] == ONE && (*bipartite_nodes)[s] == TWO) ||
+            ((*bipartite_nodes)[f] == TWO && (*bipartite_nodes)[s] == ONE)) {
+//            predefined_vertices = true;
 //# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
-            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
-        } else if (bipartite_nodes[f] == NONE &&
-                   bipartite_nodes[s] != NONE) {
-            new_nodes[f] = (bipartite_nodes[s] == ONE ? TWO : ONE);
+            calculate_aux(*new_subgraph_edges_with, new_nodes, new_node_depth, new_weight);
+        } else if ((*bipartite_nodes)[f] == NONE &&
+                (*bipartite_nodes)[s] != NONE) {
+            (*new_nodes)[f] = ((*bipartite_nodes)[s] == ONE ? TWO : ONE);
 //# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
-            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
-        } else if (bipartite_nodes[f] != NONE &&
-                   bipartite_nodes[s] == NONE) {
-            new_nodes[s] = (bipartite_nodes[f] == ONE ? TWO : ONE);
+            calculate_aux(new_subgraph_edges_with, new_nodes, new_node_depth, new_weight);
+        } else if ((*bipartite_nodes)[f] != NONE &&
+                (*bipartite_nodes)[s] == NONE) {
+            (*new_nodes)[s] = ((*bipartite_nodes)[f] == ONE ? TWO : ONE);
 //# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
-            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
-        } else if (bipartite_nodes[f] == NONE &&
-                   bipartite_nodes[s] == NONE) {
-            new_nodes[f] = ONE;
-            new_nodes[s] = TWO;
+            calculate_aux(new_subgraph_edges_with, new_nodes, new_node_depth, new_weight);
+        } else if ((*bipartite_nodes)[f] == NONE &&
+                (*bipartite_nodes)[s] == NONE) {
+            (*new_nodes)[f] = ONE;
+            (*new_nodes)[s] = TWO;
 //# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
-            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+            calculate_aux(new_subgraph_edges_with, new_nodes, new_node_depth, new_weight);
         }
     }
 
     if (bipartite_nodes[f] == NONE &&
         bipartite_nodes[s] == NONE) {
-#pragma omp task firstprivate(subgraph_edges, weight, bipartite_nodes, f, s, new_weight) firstprivate(node_depth) default(none) if(node_depth % 15 == 0)
+//#pragma omp task firstprivate(subgraph_edges, weight, bipartite_nodes, f, s, new_weight) firstprivate(node_depth) default(none) if(node_depth < 5)
         {
-            vector<bool> new_subgraph_edges_with = subgraph_edges;
-            new_subgraph_edges_with.push_back(true);
-            vector<BIPART> new_nodes = bipartite_nodes;
+            unique_ptr<vector<bool>> new_subgraph_edges_with (new vector<bool> (*subgraph_edges));
+            new_subgraph_edges_with->push_back(true);
+            unique_ptr<vector<BIPART>> new_nodes = bipartite_nodes;
+
+//            vector<bool> new_subgraph_edges_with = subgraph_edges;
+//            new_subgraph_edges_with.push_back(true);
+//            vector<BIPART> new_nodes = bipartite_nodes;
             new_nodes[s] = ONE;
             new_nodes[f] = TWO;
-            calculate_aux(new_subgraph_edges_with, new_nodes, ++node_depth, new_weight);
+//# pragma omp task default(none) shared(new_subgraph_edges_with, node_depth, new_weight, new_nodes)
+            calculate_aux(new_subgraph_edges_with, new_nodes, new_node_depth, new_weight);
         }
     }
 
-#pragma omp task shared(subgraph_edges, weight, bipartite_nodes, f, s) firstprivate(node_depth) default(none) if(node_depth % 15 == 0)
+//#pragma omp task shared(subgraph_edges, weight, bipartite_nodes, f, s) firstprivate(node_depth) default(none) if(node_depth < 5)
     {
 //        if(node_depth > 10)
 //            node_depth = 0;
@@ -330,10 +344,10 @@ void Graph::calculate_aux(const vector<bool>& subgraph_edges, const vector<BIPAR
             new_subgraph_edges_without.push_back(false);
             const vector<BIPART>& new_nodes2 = bipartite_nodes;
 //# pragma omp task default(none) shared(new_subgraph_edges_without, new_nodes2, node_depth, new_weight2)
-            calculate_aux(new_subgraph_edges_without, new_nodes2, ++node_depth, new_weight2);
+            calculate_aux(new_subgraph_edges_without, new_nodes2, new_node_depth, new_weight2);
         }
     }
-# pragma omp taskwait
+//# pragma omp taskwait
 }
 
 void Graph::calculate() {
@@ -343,10 +357,13 @@ void Graph::calculate() {
     solutions.clear();
 
     // prepare graph
-    vector<bool> subgraph_edges;
-    vector<BIPART> bipartite_nodes;
-    bipartite_nodes.assign(this->n, BIPART::NONE);
-    bipartite_nodes[0] = BIPART::ONE;
+    unique_ptr<vector<bool>> subgraph_edges;
+    unique_ptr<vector<BIPART>> bipartite_nodes;
+    bipartite_nodes->assign(this->n, BIPART::NONE);
+//    bipartite_nodes->[0] = BIPART::ONE;
+//    bipartite_nodes.operator->()[0] = BIPART::ONE;
+    unique_ptr<int> weight (new int(0));
+    unique_ptr<int> node_depth (new int(0));
 
     // get current time
     clock_t start;
@@ -354,10 +371,10 @@ void Graph::calculate() {
     auto t1 = std::chrono::high_resolution_clock::now();
 
     // calculate MBP
-#pragma omp parallel default(none) shared(subgraph_edges, bipartite_nodes) num_threads(1)
+#pragma omp parallel default(none) shared(subgraph_edges, bipartite_nodes) num_threads(this->num_threads)
     {
 #pragma omp single
-        calculate_aux(subgraph_edges, bipartite_nodes, 0, 0);
+        calculate_aux(subgraph_edges.get(), bipartite_nodes.get(), node_depth.get(), weight.get());
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -367,6 +384,14 @@ void Graph::calculate() {
     double duration_realtime = std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count() / 1000.0;
 
     // print output
+#ifndef CSV
     cout << this->filepath << " -- Solution: " << maximum << " (" << solutions.size() << ") "
     << "(" << duration << " / " << duration_realtime << " s) (recursion - " << recursion_count << " )" << endl;
+#else
+    // output to csv
+    string sep = ";";
+    // filepath, n, k, solution, # solutions, duration in seconds, running threads, running processes
+    cout << this->filepath << sep << this->n << sep << this->e << sep << maximum << sep << solutions.size() <<
+    sep << duration_realtime << sep << this->num_threads << sep << 1 << endl;
+#endif
 }

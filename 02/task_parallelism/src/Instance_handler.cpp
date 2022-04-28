@@ -9,12 +9,15 @@
 #include <filesystem>
 #include <iostream>
 
+#define CSV
 
-Instance_handler::Instance_handler(const string & dir_path) {
+
+Instance_handler::Instance_handler(const string & dir_path, int num_threads) {
     for (const auto & entry : filesystem::directory_iterator(dir_path)){
         string file_path = entry.path();
         file_paths.push_back(file_path);
     }
+    this->num_threads = num_threads;
 
     correct_solutions["graf_10_3.txt"] = "1300 (2) (0,0 s)\t(recursion - 1K)";
     correct_solutions["graf_10_5.txt"] = "1885 (1) (0,0 s)\t(recursion - 12K)";
@@ -32,10 +35,12 @@ Instance_handler::Instance_handler(const string & dir_path) {
 
 void Instance_handler::test_all() {
     for (auto & fp: file_paths){
-        unique_ptr<Graph> graph (new Graph(fp));
+        unique_ptr<Graph> graph (new Graph(fp, this->num_threads));
         graph->calculate();
 
+#ifndef CSV
         string name = fp.substr(fp.size() - 13, 13);
         std::cout << "\t\t\t\t\t\t\t  Correct: " << this->correct_solutions[name] << std::endl;
+#endif
     }
 }

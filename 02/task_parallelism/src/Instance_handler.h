@@ -15,9 +15,10 @@ class Instance_handler {
 private:
     vector<string> file_paths;
     map<string, string> correct_solutions;
+    int num_threads;
 
 public:
-    Instance_handler(const string & dir_path);
+    Instance_handler(const string & dir_path, int num_threads);
 
     void test_all ();
 };
